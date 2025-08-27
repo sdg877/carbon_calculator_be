@@ -18,4 +18,6 @@ class Footprint(Base):
     activity_type = Column(String, nullable=False)
     carbon_kg = Column(Float, nullable=False)
     user_id = Column(Integer, ForeignKey("users.id"))
+
     user = relationship("User", back_populates="footprints")
+
