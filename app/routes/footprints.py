@@ -26,7 +26,9 @@ def calculate_carbon(activity_type: str, details: dict) -> float:
 def get_current_user(
     token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)
 ):
-    user_id = auth.verify_access_token(token)
+    payload = auth.decode_access_token(token)
+    user_id = int(payload['sub'])  # <- fixed indentation
+
     user = db.query(models.User).filter(models.User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=401, detail="Invalid token")
