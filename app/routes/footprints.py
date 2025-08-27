@@ -23,16 +23,17 @@ def calculate_carbon(activity_type: str, details: dict) -> float:
     return 0
 
 
-def get_current_user(
-    token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)
-):
+def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     payload = auth.decode_access_token(token)
-    user_id = int(payload['sub'])  # <- fixed indentation
-
+    if not payload or 'sub' not in payload:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+    
+    user_id = int(payload['sub'])
     user = db.query(models.User).filter(models.User.id == user_id).first()
     if not user:
-        raise HTTPException(status_code=401, detail="Invalid token")
+        raise HTTPException(status_code=401, detail="User not found")
     return user
+
 
 
 @router.post("/", response_model=schemas.FootprintResponse)
@@ -41,14 +42,14 @@ def create_footprint(
     db: Session = Depends(get_db),
     user: models.User = Depends(get_current_user),
 ):
-
     carbon_kg = calculate_carbon(footprint.activity_type, footprint.details)
-
     db_footprint = models.Footprint(
-        activity_type=footprint.activity_type, carbon_kg=carbon_kg, user_id=user.id
+        activity_type=footprint.activity_type,
+        carbon_kg=carbon_kg,
+        user_id=user.id
     )
     db.add(db_footprint)
     db.commit()
     db.refresh(db_footprint)
-
     return db_footprint
+
