@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from .. import schemas, models, auth
 from ..database import get_db
 from fastapi.security import OAuth2PasswordBearer
+from typing import List
 
 router = APIRouter(prefix="/footprints", tags=["Footprints"])
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/users/login")
@@ -92,6 +93,15 @@ def get_current_user(
         raise HTTPException(status_code=401, detail="User not found")
     return user
 
+@router.get("/", response_model=List[schemas.FootprintResponse])
+def get_user_footprints(
+    db: Session = Depends(get_db),
+    user: models.User = Depends(get_current_user),
+):
+    footprints = db.query(models.Footprint).filter(
+        models.Footprint.user_id == user.id
+    ).all()
+    return footprints
 
 @router.post("/", response_model=schemas.FootprintResponse)
 def create_footprint(
@@ -107,3 +117,22 @@ def create_footprint(
     db.commit()
     db.refresh(db_footprint)
     return db_footprint
+
+@router.delete("/{footprint_id}", response_model=dict)
+def delete_footprint(
+    footprint_id: int,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(get_current_user),
+):
+    footprint = db.query(models.Footprint).filter(
+        models.Footprint.id == footprint_id,
+        models.Footprint.user_id == user.id
+    ).first()
+
+    if not footprint:
+        raise HTTPException(status_code=404, detail="Footprint not found")
+
+    db.delete(footprint)
+    db.commit()
+    return {"detail": f"Footprint {footprint_id} deleted successfully"}
+
