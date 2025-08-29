@@ -36,7 +36,7 @@ def calculate_carbon(activity_type: str, details: dict) -> float:
         return km * 0.105
 
     # ------------------ FOOD ------------------
-    if activity_type == "meat":
+    elif activity_type == "meat":
         servings = details.get("servings_per_week", 0)
         meat_type = details.get("type", "beef")
         factors = {
@@ -77,7 +77,52 @@ def calculate_carbon(activity_type: str, details: dict) -> float:
         returns = details.get("returns_per_month", 0)
         return (orders * 1.0) + (returns * 3.0)
 
+    # ------------------ HOUSEHOLD ------------------
+    elif activity_type == "electricity_use":
+        kwh = details.get("kwh_per_month", 0)
+        return kwh * 0.233  # UK average kg CO2 per kWh
+
+    elif activity_type == "gas_use":
+        kwh = details.get("kwh_per_month", 0)
+        return kwh * 0.184  # UK average kg CO2 per kWh
+
+    elif activity_type == "water_use":
+        litres = details.get("litres_per_day", 0)
+        return litres * 0.0003 * 30  # per month
+
+    # ------------------ WASTE ------------------
+    elif activity_type == "plastic_waste":
+        bags = details.get("bags_per_week", 0)
+        return bags * 0.5 * 52 / 12  # kg CO2 per month
+
+    elif activity_type == "general_waste":
+        kg_per_week = details.get("kg_per_week", 0)
+        return kg_per_week * 52 / 12 * 1.5
+
+    elif activity_type == "recycling":
+        percent = details.get("percent", 0)
+        return max(0, (100 - percent) * 0.2)
+
+    # ------------------ LIFESTYLE ------------------
+    elif activity_type == "streaming":
+        hours = details.get("hours_per_week", 0)
+        return hours * 0.055 * 4  # monthly
+
+    elif activity_type == "gaming":
+        hours = details.get("hours_per_week", 0)
+        return hours * 0.05 * 4
+
+    elif activity_type == "events":
+        per_year = details.get("per_year", 0)
+        return per_year * 20 / 12  # avg kg CO2 per event
+
+    elif activity_type == "hotel_stays":
+        nights = details.get("nights_per_year", 0)
+        return nights * 82 / 12  # 82kg per night
+
+    # ------------------ DEFAULT ------------------
     return 0.0
+
 
 
 def get_current_user(
