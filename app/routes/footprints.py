@@ -181,3 +181,25 @@ def delete_footprint(
     db.commit()
     return {"detail": f"Footprint {footprint_id} deleted successfully"}
 
+def suggest_offsets(carbon_kg: float) -> list[str]:
+    suggestions = []
+
+    if carbon_kg < 50:
+        suggestions.append("Plant 1 tree (absorbs ~20kg CO₂/year)")
+        suggestions.append("Cycle instead of driving once a week")
+
+    elif carbon_kg < 200:
+        suggestions.append("Plant 5 trees")
+        suggestions.append("Switch 2 meat meals to vegetarian per week")
+
+    elif carbon_kg < 500:
+        suggestions.append("Plant 10 trees")
+        suggestions.append("Use public transport instead of car twice a week")
+        suggestions.append("Upgrade to LED lighting at home")
+
+    else:
+        suggestions.append("Plant 20+ trees")
+        suggestions.append("Switch to renewable energy provider")
+        suggestions.append("Reduce air travel where possible")
+
+    return suggestions
