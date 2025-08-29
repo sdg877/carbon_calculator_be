@@ -148,7 +148,7 @@ def get_user_footprints(
     ).all()
     return footprints
 
-@router.post("/", response_model=schemas.FootprintResponse)
+@router.post("/", response_model=dict)
 def create_footprint(
     footprint: schemas.FootprintCreate,
     db: Session = Depends(get_db),
@@ -161,7 +161,16 @@ def create_footprint(
     db.add(db_footprint)
     db.commit()
     db.refresh(db_footprint)
-    return db_footprint
+
+    offsets = suggest_offsets(carbon_kg)
+
+    return {
+        "id": db_footprint.id,
+        "activity_type": db_footprint.activity_type,
+        "carbon_kg": db_footprint.carbon_kg,
+        "suggested_offsets": offsets
+    }
+
 
 @router.delete("/{footprint_id}", response_model=dict)
 def delete_footprint(
