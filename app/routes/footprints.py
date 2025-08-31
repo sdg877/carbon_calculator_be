@@ -212,3 +212,39 @@ def suggest_offsets(carbon_kg: float) -> list[str]:
         suggestions.append("Reduce air travel where possible")
 
     return suggestions
+
+
+# ------------------ TEMP FUNCTIONS ------------------
+
+@router.post("/bulk", response_model=List[schemas.FootprintResponse])
+def create_multiple_footprints(
+    footprints: List[schemas.FootprintCreate],
+    db: Session = Depends(get_db),
+    user: models.User = Depends(auth.get_current_user),
+):
+    db_objects = []
+    for footprint in footprints:
+        carbon_kg = auth.calculate_carbon(footprint.activity_type, footprint.details)
+        db_footprint = models.Footprint(
+            activity_type=footprint.activity_type,
+            carbon_kg=carbon_kg,
+            user_id=user.id
+        )
+        db.add(db_footprint)
+        db_objects.append(db_footprint)
+
+    db.commit()
+    for obj in db_objects:
+        db.refresh(obj)
+    return db_objects
+
+@router.delete("/bulk", response_model=dict)
+def bulk_delete_footprints(
+    db: Session = Depends(get_db),
+    user: models.User = Depends(auth.get_current_user),
+):
+    deleted_count = db.query(models.Footprint).filter(
+        models.Footprint.user_id == user.id
+    ).delete(synchronize_session=False)
+    db.commit()
+    return {"detail": f"Deleted {deleted_count} footprints for user {user.username}"}
