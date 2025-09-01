@@ -8,7 +8,7 @@ app = FastAPI()
 
 models.Base.metadata.create_all(bind=engine)
 
-app.include_router(users.router, prefix="/users", tags=["users"])
+app.include_router(users.router, tags=["users"])
 app.include_router(footprints.router, prefix="/footprints", tags=["footprints"])
 app.include_router(suggestions.router, prefix="/offsets", tags=["offsets"])
 
