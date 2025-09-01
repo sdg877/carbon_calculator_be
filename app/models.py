@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime
+from sqlalchemy import Boolean, Column, Integer, String, Float, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from .database import Base
 
@@ -12,6 +12,7 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
     footprints = relationship("Footprint", back_populates="user")
 
+
 class Footprint(Base):
     __tablename__ = "footprints"
 
@@ -19,7 +20,7 @@ class Footprint(Base):
     activity_type = Column(String, nullable=False)
     carbon_kg = Column(Float, nullable=False)
     user_id = Column(Integer, ForeignKey("users.id"))
-    created_at = Column(DateTime, default=datetime.utcnow)  # <-- add this
+    completed = Column(Boolean, default=False)
+    completed_at = Column(DateTime, nullable=True)
 
     user = relationship("User", back_populates="footprints")
-
