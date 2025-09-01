@@ -6,7 +6,8 @@ from .. import auth, models, schemas
 from ..database import SessionLocal
 from typing import List
 
-router = APIRouter(prefix="/users", tags=["Users"])
+router = APIRouter(prefix="", tags=["Users"])
+
 
 def get_db():
     db = SessionLocal()
