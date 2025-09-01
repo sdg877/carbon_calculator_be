@@ -107,7 +107,7 @@ def get_monthly_progress(footprints: List[models.Footprint]) -> Dict[str, float]
     return dict(monthly_totals)
 
 
-@router.get("/gamification", response_model=Dict[str, any])
+@router.get("/gamification", response_model=None)
 def get_user_gamification(db: Session = Depends(get_db), user: models.User = Depends(get_current_user)):
     footprints = db.query(models.Footprint).filter(models.Footprint.user_id == user.id).all()
     completed_footprints = [f for f in footprints if getattr(f, "completed", False)]
