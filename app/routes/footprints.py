@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Dict
 from datetime import datetime
 from .. import models, schemas, auth
 from ..database import get_db
-from ..services.carbon import calculate_carbon, suggest_offsets, calculate_points
+from ..services.carbon import calculate_carbon, suggest_offsets, calculate_points, get_user_points
 
 router = APIRouter(prefix="/footprints", tags=["Footprints"])
 
@@ -77,3 +77,33 @@ def bulk_delete_footprints(db: Session = Depends(get_db), user: models.User = De
     deleted_count = db.query(models.Footprint).filter(models.Footprint.user_id == user.id).delete(synchronize_session=False)
     db.commit()
     return {"detail": f"Deleted {deleted_count} footprints for user {user.username}"}
+
+# ------------------ GAMIFICATION ------------------
+
+def get_monthly_progress(footprints: List[models.Footprint]) -> Dict[str, float]:
+    """Returns monthly CO₂ totals for a user."""
+    from collections import defaultdict
+
+    monthly_totals = defaultdict(float)
+    for f in footprints:
+        if hasattr(f, "created_at") and f.created_at:
+            month = f.created_at.strftime("%Y-%m")
+        else:
+            month = datetime.utcnow().strftime("%Y-%m")
+        monthly_totals[month] += f.carbon_kg
+    return dict(monthly_totals)
+
+
+@router.get("/gamification", response_model=Dict[str, any])
+def get_user_gamification(db: Session = Depends(get_db), user: models.User = Depends(get_current_user)):
+    footprints = db.query(models.Footprint).filter(models.Footprint.user_id == user.id).all()
+    completed_footprints = [f for f in footprints if getattr(f, "completed", False)]
+    total_points = get_user_points(user)
+    monthly_progress = get_monthly_progress(footprints)
+
+    return {
+        "total_footprints": len(footprints),
+        "completed_footprints": len(completed_footprints),
+        "points": total_points,
+        "monthly_progress": monthly_progress,
+    }
