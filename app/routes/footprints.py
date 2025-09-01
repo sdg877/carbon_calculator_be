@@ -4,7 +4,7 @@ from typing import List, Dict
 from datetime import datetime
 from .. import models, schemas, auth
 from ..database import get_db
-from ..services.carbon import calculate_carbon, suggest_offsets, calculate_points, get_user_points
+from ..services.carbon import calculate_carbon, suggest_offsets, get_user_points
 
 router = APIRouter(prefix="/footprints", tags=["Footprints"])
 
@@ -27,12 +27,15 @@ def create_footprint(footprint: schemas.FootprintCreate, db: Session = Depends(g
     db_footprint = models.Footprint(activity_type=footprint.activity_type,
                                     carbon_kg=carbon_kg,
                                     user_id=user.id)
-    db.add(db_footprint)
-    db.commit()
-    db.refresh(db_footprint)
+    try:
+        db.add(db_footprint)
+        db.commit()
+        db.refresh(db_footprint)
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Database error: {e}")
 
     offsets = suggest_offsets(carbon_kg)
-
     return {"id": db_footprint.id,
             "activity_type": db_footprint.activity_type,
             "carbon_kg": db_footprint.carbon_kg,
@@ -42,18 +45,25 @@ def create_footprint(footprint: schemas.FootprintCreate, db: Session = Depends(g
 @router.post("/bulk", response_model=List[schemas.FootprintResponse])
 def create_multiple_footprints(footprints: List[schemas.FootprintCreate], db: Session = Depends(get_db),
                                user: models.User = Depends(get_current_user)):
-    db_objects = []
-    for footprint in footprints:
-        carbon_kg = calculate_carbon(footprint.activity_type, footprint.details)
-        db_footprint = models.Footprint(activity_type=footprint.activity_type,
-                                        carbon_kg=carbon_kg,
-                                        user_id=user.id)
-        db.add(db_footprint)
-        db_objects.append(db_footprint)
+    if not footprints:
+        raise HTTPException(status_code=400, detail="No footprints provided")
 
-    db.commit()
-    for obj in db_objects:
-        db.refresh(obj)
+    db_objects = []
+    try:
+        for footprint in footprints:
+            carbon_kg = calculate_carbon(footprint.activity_type, footprint.details)
+            db_footprint = models.Footprint(activity_type=footprint.activity_type,
+                                            carbon_kg=carbon_kg,
+                                            user_id=user.id)
+            db.add(db_footprint)
+            db_objects.append(db_footprint)
+        db.commit()
+        for obj in db_objects:
+            db.refresh(obj)
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Database error: {e}")
+
     return db_objects
 
 
@@ -64,6 +74,9 @@ def mark_footprint_completed(footprint_id: int, db: Session = Depends(get_db),
                                                   models.Footprint.user_id == user.id).first()
     if not footprint:
         raise HTTPException(status_code=404, detail="Footprint not found")
+
+    if footprint.completed:
+        return {"detail": "Footprint already completed"}
 
     footprint.completed = True
     footprint.completed_at = datetime.utcnow()
@@ -78,12 +91,12 @@ def bulk_delete_footprints(db: Session = Depends(get_db), user: models.User = De
     db.commit()
     return {"detail": f"Deleted {deleted_count} footprints for user {user.username}"}
 
+
 # ------------------ GAMIFICATION ------------------
 
 def get_monthly_progress(footprints: List[models.Footprint]) -> Dict[str, float]:
     """Returns monthly CO₂ totals for a user."""
     from collections import defaultdict
-
     monthly_totals = defaultdict(float)
     for f in footprints:
         if hasattr(f, "created_at") and f.created_at:
