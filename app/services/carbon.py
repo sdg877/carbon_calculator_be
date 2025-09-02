@@ -66,24 +66,24 @@ def calculate_carbon(activity_type: str, details: Dict) -> float:
         # ------------------ TRANSPORT ------------------
         if activity_type == "flight":
             distance_km = TRANSPORT_FACTORS["flight"].get(details.get("flight_type", "short"), 500)
-            return distance_km * TRANSPORT_FACTORS["flight"]["factor"]
+            return round(distance_km * TRANSPORT_FACTORS["flight"]["factor"], 1)
 
         elif activity_type == "driving":
             commute = details.get("commute", "short")
             km = TRANSPORT_FACTORS["driving"].get(commute, 8)
             fuel_type = details.get("fuel_type", "petrol")
             factor = TRANSPORT_FACTORS["driving"]["petrol"] if fuel_type == "petrol" else TRANSPORT_FACTORS["driving"]["other"]
-            return km * factor
+            return round(km * factor, 1)
 
         elif activity_type in ["train", "tube"]:
             commute = details.get("commute", "short")
             km = {"short": 8, "medium": 16, "long": 32}.get(commute, 8)
-            return km * TRANSPORT_FACTORS[activity_type]
+            return round(km * TRANSPORT_FACTORS[activity_type], 1)
 
         elif activity_type == "bus":
             commute = details.get("commute", "short")
             km = {"short": 8, "medium": 16, "long": 32}.get(commute, 8)
-            return km * TRANSPORT_FACTORS["bus"]
+            return round(km * TRANSPORT_FACTORS["bus"], 1)
 
         # ------------------ FOOD ------------------
         elif activity_type == "meat":
@@ -98,7 +98,7 @@ def calculate_carbon(activity_type: str, details: Dict) -> float:
 
             factor = FOOD_FACTORS["meat"][meat_type]
             avg_kg = FOOD_FACTORS["meat"]["avg_kg"]
-            return servings * avg_kg * factor
+            return round(servings * avg_kg * factor, 1)
 
         elif activity_type == "dairy":
             try:
@@ -112,25 +112,28 @@ def calculate_carbon(activity_type: str, details: Dict) -> float:
 
             factor = FOOD_FACTORS["dairy"][dairy_type]
             avg_kg = FOOD_FACTORS["dairy"]["avg_kg"]
-            return servings * avg_kg * factor
+            return round(servings * avg_kg * factor, 1)
 
         elif activity_type == "food_waste":
             freq = details.get("frequency", "weekly")
-            return FOOD_FACTORS["food_waste"].get(freq, 1.0) * 4.5
+            return round(FOOD_FACTORS["food_waste"].get(freq, 1.0) * 4.5, 1)
 
         # ------------------ SHOPPING ------------------
         elif activity_type == "clothing":
             frequency = details.get("frequency", "monthly")
-            return SHOPPING_FACTORS["clothing"].get(frequency, 10.0)
+            return round(SHOPPING_FACTORS["clothing"].get(frequency, 10.0), 1)
 
         elif activity_type == "electronics":
             frequency = details.get("frequency", "rare")
-            return SHOPPING_FACTORS["electronics"].get(frequency, 50.0)
+            return round(SHOPPING_FACTORS["electronics"].get(frequency, 50.0), 1)
 
         elif activity_type == "online_shopping":
-            orders = details.get("orders_per_month", 0)
-            returns = details.get("returns_per_month", 0)
-            return orders * SHOPPING_FACTORS["online_shopping"]["order_factor"] + returns * SHOPPING_FACTORS["online_shopping"]["return_factor"]
+            try:
+                orders = float(details.get("orders_per_month", 0))
+                returns = float(details.get("returns_per_month", 0))
+            except (TypeError, ValueError):
+                raise HTTPException(status_code=400, detail="Invalid numeric value for orders_per_month or returns_per_month")
+            return round(orders * SHOPPING_FACTORS["online_shopping"]["order_factor"] + returns * SHOPPING_FACTORS["online_shopping"]["return_factor"], 1)
 
         # ------------------ HOUSEHOLD ------------------
         elif activity_type in ["electricity_use", "gas_use", "water_use"]:
@@ -143,7 +146,7 @@ def calculate_carbon(activity_type: str, details: Dict) -> float:
             except (TypeError, ValueError):
                 raise HTTPException(status_code=400, detail=f"Invalid numeric value for {key}")
 
-            return val * HOUSEHOLD_FACTORS[key]
+            return round(val * HOUSEHOLD_FACTORS[key], 1)
 
         # ------------------ WASTE ------------------
         elif activity_type == "plastic_waste":
@@ -151,21 +154,21 @@ def calculate_carbon(activity_type: str, details: Dict) -> float:
                 bags = float(details.get("bags_per_week", 0))
             except (TypeError, ValueError):
                 raise HTTPException(status_code=400, detail="Invalid value for bags_per_week")
-            return bags * WASTE_FACTORS["plastic_waste"]
+            return round(bags * WASTE_FACTORS["plastic_waste"], 1)
 
         elif activity_type == "general_waste":
             try:
                 kg_per_week = float(details.get("kg_per_week", 0))
             except (TypeError, ValueError):
                 raise HTTPException(status_code=400, detail="Invalid value for kg_per_week")
-            return kg_per_week * WASTE_FACTORS["general_waste"]
+            return round(kg_per_week * WASTE_FACTORS["general_waste"], 1)
 
         elif activity_type == "recycling":
             try:
                 percent = float(details.get("percent", 0))
             except (TypeError, ValueError):
                 raise HTTPException(status_code=400, detail="Invalid value for percent")
-            return max(0, (100 - percent) * WASTE_FACTORS["recycling"])
+            return round(max(0, (100 - percent) * WASTE_FACTORS["recycling"]), 1)
       
         # ------------------ LIFESTYLE ------------------
         elif activity_type in ["streaming", "gaming"]:
@@ -173,21 +176,21 @@ def calculate_carbon(activity_type: str, details: Dict) -> float:
                 hours = float(details.get("hours_per_week", 0))
             except (TypeError, ValueError):
                 raise HTTPException(status_code=400, detail=f"Invalid value for hours_per_week for {activity_type}")
-            return hours * LIFESTYLE_FACTORS[activity_type]
+            return round(hours * LIFESTYLE_FACTORS[activity_type], 1)
 
         elif activity_type == "events":
             try:
                 per_year = float(details.get("per_year", 0))
             except (TypeError, ValueError):
                 raise HTTPException(status_code=400, detail="Invalid value for per_year")
-            return per_year * LIFESTYLE_FACTORS["events"]
+            return round(per_year * LIFESTYLE_FACTORS["events"], 1)
 
         elif activity_type == "hotel_stays":
             try:
                 nights = float(details.get("nights_per_year", 0))
             except (TypeError, ValueError):
                 raise HTTPException(status_code=400, detail="Invalid value for nights_per_year")
-            return nights * LIFESTYLE_FACTORS["hotel_stays"]
+            return round(nights * LIFESTYLE_FACTORS["hotel_stays"], 1)
         else:
             return 0.0
 
