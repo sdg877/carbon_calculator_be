@@ -2,22 +2,25 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from . import models
 from .database import engine
-from .routes import users, footprints, suggestions
+from app.routes import users, footprints, suggestions
 
 app = FastAPI()
 
+# Create tables
 models.Base.metadata.create_all(bind=engine)
 
+# Include routers
 app.include_router(users.router, tags=["users"])
-app.include_router(footprints.router, prefix="/footprints", tags=["footprints"])
+app.include_router(footprints.router, tags=["footprints"]) 
 app.include_router(suggestions.router, prefix="/offsets", tags=["offsets"])
 
+# CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # frontend origin
+    allow_origins=["http://localhost:3000"],
     allow_credentials=True,
-    allow_methods=["*"],  # allow POST, GET, OPTIONS etc.
-    allow_headers=["*"],  # allow Content-Type, Authorization, etc.
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 @app.get("/")
