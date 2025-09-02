@@ -50,7 +50,6 @@ LIFESTYLE_FACTORS = {
     "hotel_stays": 82 / 12
 }
 
-
 # ------------------ FUNCTIONS ------------------
 def calculate_carbon(activity_type: str, details: Dict) -> float:
     """
@@ -88,14 +87,32 @@ def calculate_carbon(activity_type: str, details: Dict) -> float:
 
         # ------------------ FOOD ------------------
         elif activity_type == "meat":
-            servings = details.get("servings_per_week", 0)
+            try:
+                servings = float(details.get("servings_per_week", 0))
+            except (TypeError, ValueError):
+                raise HTTPException(status_code=400, detail="Invalid value for servings_per_week")
+
             meat_type = details.get("type", "beef")
-            return servings * FOOD_FACTORS["meat"]["avg_kg"] * FOOD_FACTORS["meat"].get(meat_type, 10.0)
+            if meat_type not in FOOD_FACTORS["meat"]:
+                raise HTTPException(status_code=400, detail=f"Invalid meat type: {meat_type}")
+
+            factor = FOOD_FACTORS["meat"][meat_type]
+            avg_kg = FOOD_FACTORS["meat"]["avg_kg"]
+            return servings * avg_kg * factor
 
         elif activity_type == "dairy":
-            servings = details.get("servings_per_week", 0)
+            try:
+                servings = float(details.get("servings_per_week", 0))
+            except (TypeError, ValueError):
+                raise HTTPException(status_code=400, detail="Invalid value for servings_per_week")
+
             dairy_type = details.get("type", "milk")
-            return servings * FOOD_FACTORS["dairy"]["avg_kg"] * FOOD_FACTORS["dairy"].get(dairy_type, 2.0)
+            if dairy_type not in FOOD_FACTORS["dairy"]:
+                raise HTTPException(status_code=400, detail=f"Invalid dairy type: {dairy_type}")
+
+            factor = FOOD_FACTORS["dairy"][dairy_type]
+            avg_kg = FOOD_FACTORS["dairy"]["avg_kg"]
+            return servings * avg_kg * factor
 
         elif activity_type == "food_waste":
             freq = details.get("frequency", "weekly")
@@ -118,31 +135,59 @@ def calculate_carbon(activity_type: str, details: Dict) -> float:
         # ------------------ HOUSEHOLD ------------------
         elif activity_type in ["electricity_use", "gas_use", "water_use"]:
             key = activity_type
-            val = details.get("kwh_per_month") if key != "water_use" else details.get("litres_per_day", 0)
+            try:
+                if key == "water_use":
+                    val = float(details.get("litres_per_day", 0))
+                else:
+                    val = float(details.get("kwh_per_month", 0))
+            except (TypeError, ValueError):
+                raise HTTPException(status_code=400, detail=f"Invalid numeric value for {key}")
+
             return val * HOUSEHOLD_FACTORS[key]
 
         # ------------------ WASTE ------------------
         elif activity_type == "plastic_waste":
-            return details.get("bags_per_week", 0) * WASTE_FACTORS["plastic_waste"]
+            try:
+                bags = float(details.get("bags_per_week", 0))
+            except (TypeError, ValueError):
+                raise HTTPException(status_code=400, detail="Invalid value for bags_per_week")
+            return bags * WASTE_FACTORS["plastic_waste"]
 
         elif activity_type == "general_waste":
-            return details.get("kg_per_week", 0) * WASTE_FACTORS["general_waste"]
+            try:
+                kg_per_week = float(details.get("kg_per_week", 0))
+            except (TypeError, ValueError):
+                raise HTTPException(status_code=400, detail="Invalid value for kg_per_week")
+            return kg_per_week * WASTE_FACTORS["general_waste"]
 
         elif activity_type == "recycling":
-            percent = details.get("percent", 0)
+            try:
+                percent = float(details.get("percent", 0))
+            except (TypeError, ValueError):
+                raise HTTPException(status_code=400, detail="Invalid value for percent")
             return max(0, (100 - percent) * WASTE_FACTORS["recycling"])
-
+      
         # ------------------ LIFESTYLE ------------------
         elif activity_type in ["streaming", "gaming"]:
-            hours = details.get("hours_per_week", 0)
+            try:
+                hours = float(details.get("hours_per_week", 0))
+            except (TypeError, ValueError):
+                raise HTTPException(status_code=400, detail=f"Invalid value for hours_per_week for {activity_type}")
             return hours * LIFESTYLE_FACTORS[activity_type]
 
         elif activity_type == "events":
-            return details.get("per_year", 0) * LIFESTYLE_FACTORS["events"]
+            try:
+                per_year = float(details.get("per_year", 0))
+            except (TypeError, ValueError):
+                raise HTTPException(status_code=400, detail="Invalid value for per_year")
+            return per_year * LIFESTYLE_FACTORS["events"]
 
         elif activity_type == "hotel_stays":
-            return details.get("nights_per_year", 0) * LIFESTYLE_FACTORS["hotel_stays"]
-
+            try:
+                nights = float(details.get("nights_per_year", 0))
+            except (TypeError, ValueError):
+                raise HTTPException(status_code=400, detail="Invalid value for nights_per_year")
+            return nights * LIFESTYLE_FACTORS["hotel_stays"]
         else:
             return 0.0
 
