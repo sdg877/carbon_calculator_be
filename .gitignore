@@ -3,3 +3,10 @@
 # backend/.gitignore
 __pycache__/
 *.pyc
+
+# Ignore SQLite databases
+*.sqlite3
+*.db
+
+# Ignore Alembic cache
+alembic/__pycache__/
