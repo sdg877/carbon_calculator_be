@@ -1,6 +1,6 @@
-from pydantic import BaseModel
 from pydantic import BaseModel, Field
-from typing import Dict
+from typing import Dict, List, Optional
+from datetime import datetime
 
 
 class UserCreate(BaseModel):
@@ -38,6 +38,6 @@ class FootprintResponse(BaseModel):
     activity_type: str
     carbon_kg: float
     user_id: int
-
-    class Config:
-        from_attributes = True
+    completed: bool
+    completed_at: Optional[datetime]
+    suggested_offsets: Optional[List[str]] = None
