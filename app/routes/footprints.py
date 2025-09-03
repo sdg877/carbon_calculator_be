@@ -157,3 +157,15 @@ def get_user_gamification(
         "points": total_points,
         "monthly_progress": monthly_progress,
     }
+
+@router.get("/self", response_model=List[schemas.FootprintResponse])
+def get_my_footprints(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user),
+):
+    footprints = (
+        db.query(models.Footprint)
+        .filter(models.Footprint.user_id == current_user.id)
+        .all()
+    )
+    return footprints
