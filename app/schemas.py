@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from typing import Dict, List, Optional
 from datetime import datetime
 
@@ -13,6 +13,8 @@ class UserResponse(BaseModel):
     id: int
     username: str
     email: str
+    created_at: datetime
+    last_login_at: Optional[datetime] = None  # nullable if no login yet
 
     class Config:
         orm_mode = True
