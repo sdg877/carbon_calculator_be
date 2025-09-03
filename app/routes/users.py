@@ -5,6 +5,8 @@ from sqlalchemy.orm import Session
 from .. import auth, models, schemas
 from ..database import SessionLocal
 from typing import List
+from app import models, schemas, auth
+
 
 router = APIRouter(prefix="", tags=["Users"])
 
@@ -42,3 +44,10 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
 def get_all_users(db: Session = Depends(get_db)):
     users = db.query(models.User).all()
     return users
+
+@router.get("/profile", response_model=schemas.UserResponse)
+def read_users_me(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    return current_user
