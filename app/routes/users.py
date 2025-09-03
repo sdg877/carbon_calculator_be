@@ -6,6 +6,7 @@ from .. import auth, models, schemas
 from ..database import SessionLocal
 from typing import List
 from app import models, schemas, auth
+from datetime import datetime
 
 
 router = APIRouter(prefix="", tags=["Users"])
@@ -37,9 +38,13 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
     user = db.query(models.User).filter(models.User.email == form_data.username).first()
     if not user or not auth.verify_password(form_data.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
+    
+    # Update last login timestamp
+    user.last_login_at = datetime.utcnow()
+    db.commit()
+
     access_token = auth.create_access_token({"sub": str(user.id)})
     return {"access_token": access_token, "token_type": "bearer"}
-
 @router.get("/", response_model=List[schemas.UserResponse])
 def get_all_users(db: Session = Depends(get_db)):
     users = db.query(models.User).all()
