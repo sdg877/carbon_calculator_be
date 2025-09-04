@@ -40,6 +40,10 @@ class FootprintResponse(BaseModel):
     activity_type: str
     carbon_kg: float
     user_id: int
-    completed: bool
-    completed_at: Optional[datetime]
+    details: Optional[dict] = None
     suggested_offsets: Optional[List[str]] = None
+    created_at: datetime
+
+    class Config:
+        orm_mode = True
+
