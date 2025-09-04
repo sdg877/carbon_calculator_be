@@ -25,7 +25,6 @@ def get_user_footprints(
 ):
     return db.query(models.Footprint).filter(models.Footprint.user_id == user.id).all()
 
-
 @router.post("/", response_model=schemas.FootprintResponse)
 def create_footprint(
     footprint: schemas.FootprintCreate,
@@ -37,8 +36,7 @@ def create_footprint(
         activity_type=footprint.activity_type,
         carbon_kg=carbon_kg,
         user_id=user.id,
-        completed=False,
-        completed_at=None,
+        details=footprint.details,  
     )
     try:
         db.add(db_footprint)
@@ -50,8 +48,11 @@ def create_footprint(
 
     offsets = suggest_offsets(carbon_kg)
     db_footprint.suggested_offsets = offsets
+    db.commit()  # persist offsets
+    db.refresh(db_footprint)
 
     return db_footprint
+
 
 
 @router.post("/bulk", response_model=List[schemas.FootprintResponse])
