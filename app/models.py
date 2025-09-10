@@ -24,8 +24,8 @@ class Footprint(Base):
     id = Column(Integer, primary_key=True, index=True)
     activity_type = Column(String, nullable=False)
     carbon_kg = Column(Float, nullable=False)
-    details = Column(JSON, nullable=True)               
-    suggested_offsets = Column(JSON, nullable=True) 
+    details = Column(JSON, nullable=True)
+    suggested_offsets = Column(JSON, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     user_id = Column(Integer, ForeignKey("users.id"))
