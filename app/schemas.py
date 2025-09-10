@@ -14,7 +14,7 @@ class UserResponse(BaseModel):
     username: str
     email: str
     created_at: datetime
-    last_login_at: Optional[datetime] = None  # nullable if no login yet
+    last_login_at: Optional[datetime] = None
 
     class Config:
         orm_mode = True
@@ -46,4 +46,3 @@ class FootprintResponse(BaseModel):
 
     class Config:
         orm_mode = True
-
