@@ -6,12 +6,10 @@ from app.routes import users, footprints, suggestions
 
 app = FastAPI()
 
-# Create tables
 models.Base.metadata.create_all(bind=engine)
 
-# Include routers
 app.include_router(users.router, tags=["users"])
-app.include_router(footprints.router, tags=["footprints"]) 
+app.include_router(footprints.router, tags=["footprints"])
 app.include_router(suggestions.router, prefix="/offsets", tags=["offsets"])
 
 # CORS middleware
@@ -22,6 +20,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 @app.get("/")
 def root():
