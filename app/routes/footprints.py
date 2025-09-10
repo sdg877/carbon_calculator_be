@@ -25,6 +25,7 @@ def get_user_footprints(
 ):
     return db.query(models.Footprint).filter(models.Footprint.user_id == user.id).all()
 
+
 @router.post("/", response_model=schemas.FootprintResponse)
 def create_footprint(
     footprint: schemas.FootprintCreate,
@@ -36,7 +37,7 @@ def create_footprint(
         activity_type=footprint.activity_type,
         carbon_kg=carbon_kg,
         user_id=user.id,
-        details=footprint.details,  
+        details=footprint.details,
     )
     try:
         db.add(db_footprint)
@@ -52,7 +53,6 @@ def create_footprint(
     db.refresh(db_footprint)
 
     return db_footprint
-
 
 
 @router.post("/bulk", response_model=List[schemas.FootprintResponse])
@@ -158,6 +158,7 @@ def get_user_gamification(
         "points": total_points,
         "monthly_progress": monthly_progress,
     }
+
 
 @router.get("/self", response_model=List[schemas.FootprintResponse])
 def get_my_footprints(
