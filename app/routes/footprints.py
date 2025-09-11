@@ -99,6 +99,17 @@ def bulk_delete_footprints(
     return {"detail": f"Deleted {deleted_count} footprints for user {user.username}"}
 
 
+@router.get("/all", response_model=List[schemas.FootprintResponse])
+def get_all_footprints(
+    db: Session = Depends(get_db),
+    user: models.User = Depends(get_current_user)
+):
+    """
+    Retrieves all footprints from the database for comparative analysis.
+    This endpoint is protected and requires authentication.
+    """
+    return db.query(models.Footprint).all()
+
 # ------------------ GAMIFICATION ------------------
 
 
