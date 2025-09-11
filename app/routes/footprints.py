@@ -49,7 +49,7 @@ def create_footprint(
 
     offsets = suggest_offsets(carbon_kg)
     db_footprint.suggested_offsets = offsets
-    db.commit() 
+    db.commit()
     db.refresh(db_footprint)
 
     return db_footprint
@@ -85,7 +85,6 @@ def create_multiple_footprints(
     return db_objects
 
 
-
 @router.delete("/bulk", response_model=dict)
 def bulk_delete_footprints(
     db: Session = Depends(get_db), user: models.User = Depends(get_current_user)
@@ -101,14 +100,11 @@ def bulk_delete_footprints(
 
 @router.get("/all", response_model=List[schemas.FootprintResponse])
 def get_all_footprints(
-    db: Session = Depends(get_db),
-    user: models.User = Depends(get_current_user)
+    db: Session = Depends(get_db), user: models.User = Depends(get_current_user)
 ):
-    """
-    Retrieves all footprints from the database for comparative analysis.
-    This endpoint is protected and requires authentication.
-    """
+
     return db.query(models.Footprint).all()
+
 
 # ------------------ GAMIFICATION ------------------
 
