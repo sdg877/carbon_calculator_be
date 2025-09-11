@@ -49,7 +49,7 @@ def create_footprint(
 
     offsets = suggest_offsets(carbon_kg)
     db_footprint.suggested_offsets = offsets
-    db.commit()  # persist offsets
+    db.commit() 
     db.refresh(db_footprint)
 
     return db_footprint
@@ -84,31 +84,6 @@ def create_multiple_footprints(
 
     return db_objects
 
-
-@router.patch("/{footprint_id}/complete", response_model=dict)
-def mark_footprint_completed(
-    footprint_id: int,
-    db: Session = Depends(get_db),
-    user: models.User = Depends(get_current_user),
-):
-    footprint = (
-        db.query(models.Footprint)
-        .filter(
-            models.Footprint.id == footprint_id, models.Footprint.user_id == user.id
-        )
-        .first()
-    )
-    if not footprint:
-        raise HTTPException(status_code=404, detail="Footprint not found")
-
-    if footprint.completed:
-        return {"detail": "Footprint already completed"}
-
-    footprint.completed = True
-    footprint.completed_at = datetime.utcnow()
-    db.commit()
-    db.refresh(footprint)
-    return {"detail": f"Footprint {footprint_id} marked as completed"}
 
 
 @router.delete("/bulk", response_model=dict)
