@@ -1,48 +1,43 @@
+from typing import Optional, List, Dict
 from pydantic import BaseModel
-from typing import Dict, List, Optional
 from datetime import datetime
 
-
-class UserCreate(BaseModel):
+class UserBase(BaseModel):
     username: str
-    email: str
+
+class UserCreate(UserBase):
     password: str
 
-
-class UserResponse(BaseModel):
+class UserResponse(UserBase):
     id: int
-    username: str
-    email: str
-    created_at: datetime
-    last_login_at: Optional[datetime] = None
-
+    is_active: bool
     class Config:
-        orm_mode = True
-
-
-class LoginRequest(BaseModel):
-    email: str
-    password: str
-
+        from_attributes = True
 
 class Token(BaseModel):
     access_token: str
-    token_type: str = "bearer"
+    token_type: str
 
-
-class FootprintCreate(BaseModel):
-    activity_type: str
-    details: dict
-
-
-class FootprintResponse(BaseModel):
-    id: int
+class FootprintBase(BaseModel):
     activity_type: str
     carbon_kg: float
+    details: Optional[Dict] = None
+
+class FootprintCreate(FootprintBase):
+    pass
+
+class FootprintResponse(FootprintBase):
+    id: int
     user_id: int
-    details: Optional[dict] = None
-    suggested_offsets: Optional[List[str]] = None
     created_at: datetime
+    suggested_offsets: Optional[List[str]] = []
 
     class Config:
-        orm_mode = True
+        from_attributes = True
+
+class FootprintAverageResponse(BaseModel):
+    created_at: datetime
+    carbon_kg: float
+    
+    class Config:
+        from_attributes = True
