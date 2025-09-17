@@ -17,10 +17,9 @@ class UserResponse(UserBase):
 class Token(BaseModel):
     access_token: str
     token_type: str
-
+    
 class FootprintBase(BaseModel):
     activity_type: str
-    carbon_kg: float
     details: Optional[Dict] = None
 
 class FootprintCreate(FootprintBase):
@@ -29,11 +28,30 @@ class FootprintCreate(FootprintBase):
 class FootprintResponse(FootprintBase):
     id: int
     user_id: int
+    carbon_kg: float
     created_at: datetime
     suggested_offsets: Optional[List[str]] = []
 
     class Config:
         from_attributes = True
+
+
+# class FootprintBase(BaseModel):
+#     activity_type: str
+#     carbon_kg: float
+#     details: Optional[Dict] = None
+
+# class FootprintCreate(FootprintBase):
+#     pass
+
+# class FootprintResponse(FootprintBase):
+#     id: int
+#     user_id: int
+#     created_at: datetime
+#     suggested_offsets: Optional[List[str]] = []
+
+#     class Config:
+#         from_attributes = True
 
 class FootprintAverageResponse(BaseModel):
     created_at: datetime
