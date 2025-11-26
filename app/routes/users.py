@@ -1,12 +1,12 @@
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi.security import OAuth2PasswordRequestForm
-from datetime import timedelta
 from sqlalchemy.orm import Session
-from .. import auth, models, schemas
-from ..database import SessionLocal
 from typing import List
 from app import models, schemas, auth
 from datetime import datetime
+
+from .. import auth, models, schemas
+from ..database import SessionLocal
 
 
 router = APIRouter(prefix="", tags=["Users"])
@@ -40,7 +40,6 @@ def login(
     if not user or not auth.verify_password(form_data.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
-    # Update last login timestamp
     user.last_login_at = datetime.utcnow()
     db.commit()
 
@@ -59,6 +58,43 @@ def read_users_me(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(auth.get_current_user),
 ):
+    return current_user
+
+
+@router.put("/profile", response_model=schemas.UserResponse)
+def update_profile(
+    updates: schemas.UserUpdate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user),
+):
+
+    if updates.username:
+        existing_user = (
+            db.query(models.User)
+            .filter(
+                models.User.username == updates.username,
+                models.User.id != current_user.id,
+            )
+            .first()
+        )
+        if existing_user:
+            raise HTTPException(status_code=400, detail="Username already taken")
+        current_user.username = updates.username
+
+    if updates.email:
+        existing_email = (
+            db.query(models.User)
+            .filter(
+                models.User.email == updates.email, models.User.id != current_user.id
+            )
+            .first()
+        )
+        if existing_email:
+            raise HTTPException(status_code=400, detail="Email already used")
+        current_user.email = updates.email
+
+    db.commit()
+    db.refresh(current_user)
     return current_user
 
 
