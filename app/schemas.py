@@ -14,6 +14,7 @@ class UserCreate(UserBase):
 
 class UserResponse(UserBase):
     id: int
+    last_login_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
