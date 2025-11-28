@@ -24,7 +24,10 @@ def get_db():
 def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
     hashed_password = auth.get_password_hash(user.password)
     db_user = models.User(
-        username=user.username, email=user.email, hashed_password=hashed_password
+        username=user.username,
+        email=user.email,
+        hashed_password=hashed_password,
+        last_login_at=datetime.utcnow(),
     )
     db.add(db_user)
     db.commit()
@@ -37,11 +40,15 @@ def login(
     form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)
 ):
     user = db.query(models.User).filter(models.User.email == form_data.username).first()
-    if not user or not auth.verify_password(form_data.password, user.hashed_password):
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+
+    if not auth.verify_password(form_data.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     user.last_login_at = datetime.utcnow()
     db.commit()
+    db.refresh(user)
 
     access_token = auth.create_access_token({"sub": str(user.id)})
     return {"access_token": access_token, "token_type": "bearer"}
@@ -104,16 +111,14 @@ def update_password(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(auth.get_current_user),
 ):
-    """
-    Update the current user's password.
-    Expects JSON: { "new_password": "..." }
-    """
     new_password = password_data.get("new_password")
     if not new_password:
         raise HTTPException(status_code=400, detail="New password is required")
 
     hashed_password = auth.get_password_hash(new_password)
-    current_user.hashed_password = hashed_password
-
+    db_user = db.query(models.User).filter(models.User.id == current_user.id).first()
+    db_user.hashed_password = hashed_password
     db.commit()
+    db.refresh(db_user)
+
     return {"detail": "Password updated successfully"}
