@@ -8,7 +8,6 @@ from datetime import datetime
 from .. import auth, models, schemas
 from ..database import SessionLocal
 
-
 router = APIRouter(prefix="", tags=["Users"])
 
 
