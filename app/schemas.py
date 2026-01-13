@@ -33,6 +33,7 @@ class Token(BaseModel):
 class FootprintBase(BaseModel):
     activity_type: str
     details: Optional[Dict] = None
+    entry_date: datetime
 
 
 class FootprintCreate(FootprintBase):
@@ -51,7 +52,7 @@ class FootprintResponse(FootprintBase):
 
 
 class FootprintAverageResponse(BaseModel):
-    created_at: datetime
+    entry_date: datetime
     carbon_kg: float
 
     class Config:
