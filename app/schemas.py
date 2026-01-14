@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from datetime import datetime
 
 
+# --- USER SCHEMAS ---
 class UserBase(BaseModel):
     username: str
     email: str
@@ -30,11 +31,13 @@ class Token(BaseModel):
     token_type: str
 
 
+# --- FOOTPRINT SCHEMAS ---
+
+
 class FootprintBase(BaseModel):
     activity_type: str
-    details: Optional[Dict] = None
+    details: dict
     entry_date: datetime
-    # New Fields
     is_recurring: bool = False
     recurrence_frequency: Optional[str] = None
 
@@ -45,10 +48,9 @@ class FootprintCreate(FootprintBase):
 
 class FootprintResponse(FootprintBase):
     id: int
-    user_id: int
     carbon_kg: float
     created_at: datetime
-    suggested_offsets: Optional[List[str]] = []
+    suggested_offsets: Optional[List[str]] = None
 
     class Config:
         from_attributes = True
