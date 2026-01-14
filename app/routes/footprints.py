@@ -35,12 +35,17 @@ def create_footprint(
     user: models.User = Depends(get_current_user),
 ):
     carbon_kg = calculate_carbon(footprint.activity_type, footprint.details)
+
     db_footprint = models.Footprint(
         activity_type=footprint.activity_type,
         carbon_kg=carbon_kg,
         user_id=user.id,
         details=footprint.details,
+        entry_date=footprint.entry_date,
+        is_recurring=footprint.is_recurring,
+        recurrence_frequency=footprint.recurrence_frequency,
     )
+
     try:
         db.add(db_footprint)
         db.commit()
@@ -115,7 +120,6 @@ def get_all_footprints(
         .subquery()
     )
 
-    # Main query to calculate the daily average of those user totals
     daily_average_footprints = (
         db.query(
             func.date(daily_user_totals.c.created_at_date).label("created_at"),
@@ -126,16 +130,12 @@ def get_all_footprints(
         .all()
     )
 
-    # Format the results to match the schema
     formatted_results = [
         {"created_at": row.created_at, "carbon_kg": row.carbon_kg}
         for row in daily_average_footprints
     ]
 
     return formatted_results
-
-
-# ------------------ GAMIFICATION ------------------
 
 
 def get_monthly_progress(footprints: List[models.Footprint]) -> Dict[str, float]:
@@ -176,9 +176,21 @@ def get_my_footprints(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(auth.get_current_user),
 ):
+
     footprints = (
         db.query(models.Footprint)
         .filter(models.Footprint.user_id == current_user.id)
         .all()
     )
-    return footprints
+
+    results = []
+
+    for f in footprints:
+        results.append(f)
+
+        if f.is_recurring:
+            print(
+                f"DEBUG: Found a recurring {f.activity_type}! Need to repeat this on the graph."
+            )
+
+    return results
