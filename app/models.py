@@ -18,19 +18,6 @@ class User(Base):
     footprints = relationship("Footprint", back_populates="user")
 
 
-# class Footprint(Base):
-#     __tablename__ = "footprints"
-
-#     id = Column(Integer, primary_key=True, index=True)
-#     activity_type = Column(String, nullable=False)
-#     carbon_kg = Column(Float, nullable=False)
-#     details = Column(JSON, nullable=True)
-#     suggested_offsets = Column(JSON, nullable=True)
-#     created_at = Column(DateTime, default=datetime.utcnow)
-
-#     user_id = Column(Integer, ForeignKey("users.id"))
-#     user = relationship("User", back_populates="footprints")
-
 class Footprint(Base):
     __tablename__ = "footprints"
 
@@ -39,10 +26,12 @@ class Footprint(Base):
     carbon_kg = Column(Float, nullable=False)
     details = Column(JSON, nullable=True)
     suggested_offsets = Column(JSON, nullable=True)
-    # This tracks when the entry was physically created
     created_at = Column(DateTime, default=datetime.utcnow)
-    # This is the date the user chooses in the form
     entry_date = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    # RECURRING FIELDS
+    is_recurring = Column(Boolean, default=False)
+    recurrence_frequency = Column(String, nullable=True)
 
     user_id = Column(Integer, ForeignKey("users.id"))
     user = relationship("User", back_populates="footprints")
