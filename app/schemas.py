@@ -34,6 +34,9 @@ class FootprintBase(BaseModel):
     activity_type: str
     details: Optional[Dict] = None
     entry_date: datetime
+    # New Fields
+    is_recurring: bool = False
+    recurrence_frequency: Optional[str] = None
 
 
 class FootprintCreate(FootprintBase):
