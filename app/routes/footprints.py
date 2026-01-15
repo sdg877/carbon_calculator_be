@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 from typing import List, Dict
 from datetime import datetime
+from datetime import timedelta
 from .. import models, schemas, auth
 from ..database import get_db
 from ..services.carbon import calculate_carbon, suggest_offsets, get_user_points
@@ -11,14 +12,10 @@ from ..services.carbon import calculate_carbon, suggest_offsets, get_user_points
 router = APIRouter(prefix="/footprints", tags=["Footprints"])
 
 
-# ------------------ USER DEPENDENCY ------------------
 def get_current_user(
     token: str = Depends(auth.oauth2_scheme), db: Session = Depends(get_db)
 ):
     return auth.get_current_user(token, db)
-
-
-# ------------------ ROUTES ------------------
 
 
 @router.get("/", response_model=List[schemas.FootprintResponse])
@@ -109,7 +106,6 @@ def bulk_delete_footprints(
 def get_all_footprints(
     db: Session = Depends(get_db), user: models.User = Depends(get_current_user)
 ):
-    # Subquery to calculate each user's daily total
     daily_user_totals = (
         db.query(
             models.Footprint.user_id,
@@ -152,45 +148,64 @@ def get_monthly_progress(footprints: List[models.Footprint]) -> Dict[str, float]
     return dict(monthly_totals)
 
 
-@router.get("/gamification", response_model=None)
-def get_user_gamification(
-    db: Session = Depends(get_db), user: models.User = Depends(get_current_user)
-):
-    footprints = (
-        db.query(models.Footprint).filter(models.Footprint.user_id == user.id).all()
-    )
-    completed_footprints = [f for f in footprints if getattr(f, "completed", False)]
-    total_points = get_user_points(user)
-    monthly_progress = get_monthly_progress(footprints)
-
-    return {
-        "total_footprints": len(footprints),
-        "completed_footprints": len(completed_footprints),
-        "points": total_points,
-        "monthly_progress": monthly_progress,
-    }
 
 
+# @router.get("/self", response_model=List[schemas.FootprintResponse])
+# def get_my_footprints(
+#     db: Session = Depends(get_db),
+#     current_user: models.User = Depends(auth.get_current_user),
+# ):
+
+#     footprints = (
+#         db.query(models.Footprint)
+#         .filter(models.Footprint.user_id == current_user.id)
+#         .all()
+#     )
+
+#     results = []
+
+#     for f in footprints:
+#         results.append(f)
+
+#         if f.is_recurring:
+#             print(
+#                 f"DEBUG: Found a recurring {f.activity_type}! Need to repeat this on the graph."
+#             )
+
+#     return results
 @router.get("/self", response_model=List[schemas.FootprintResponse])
 def get_my_footprints(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(auth.get_current_user),
 ):
-
-    footprints = (
-        db.query(models.Footprint)
-        .filter(models.Footprint.user_id == current_user.id)
-        .all()
-    )
-
+    footprints = db.query(models.Footprint).filter(models.Footprint.user_id == current_user.id).all()
     results = []
+    today = datetime.utcnow().date()
 
     for f in footprints:
         results.append(f)
+        if not f.is_recurring:
+            continue
 
-        if f.is_recurring:
-            print(
-                f"DEBUG: Found a recurring {f.activity_type}! Need to repeat this on the graph."
-            )
+        # Start from the date you chose (e.g., October)
+        # End 6 months in the future so the graph looks ahead
+        start_date = f.entry_date.date() if hasattr(f.entry_date, 'date') else f.entry_date
+        end_limit = today + timedelta(weeks=26)
+
+        # WEEKLY
+        if f.recurrence_frequency == "weekly":
+            current_date = start_date + timedelta(weeks=1)
+            while current_date <= end_limit:
+                results.append(schemas.FootprintResponse(**f.__dict__, entry_date=current_date))
+                current_date += timedelta(weeks=1)
+
+        # WEEKDAY (Mon-Fri)
+        elif f.recurrence_frequency == "weekday":
+            current_date = start_date
+            while current_date <= end_limit:
+                # 0-4 are Mon-Fri
+                if current_date.weekday() < 5 and current_date != start_date:
+                    results.append(schemas.FootprintResponse(**f.__dict__, entry_date=current_date))
+                current_date += timedelta(days=1)
 
     return results
