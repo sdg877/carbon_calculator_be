@@ -7,7 +7,7 @@ from datetime import datetime
 from datetime import timedelta
 from .. import models, schemas, auth
 from ..database import get_db
-from ..services.carbon import calculate_carbon, suggest_offsets, get_user_points
+from ..services.carbon import calculate_carbon, suggest_offsets
 
 router = APIRouter(prefix="/footprints", tags=["Footprints"])
 
@@ -148,64 +148,66 @@ def get_monthly_progress(footprints: List[models.Footprint]) -> Dict[str, float]
     return dict(monthly_totals)
 
 
-
-
-# @router.get("/self", response_model=List[schemas.FootprintResponse])
-# def get_my_footprints(
-#     db: Session = Depends(get_db),
-#     current_user: models.User = Depends(auth.get_current_user),
-# ):
-
-#     footprints = (
-#         db.query(models.Footprint)
-#         .filter(models.Footprint.user_id == current_user.id)
-#         .all()
-#     )
-
-#     results = []
-
-#     for f in footprints:
-#         results.append(f)
-
-#         if f.is_recurring:
-#             print(
-#                 f"DEBUG: Found a recurring {f.activity_type}! Need to repeat this on the graph."
-#             )
-
-#     return results
 @router.get("/self", response_model=List[schemas.FootprintResponse])
 def get_my_footprints(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(auth.get_current_user),
 ):
-    footprints = db.query(models.Footprint).filter(models.Footprint.user_id == current_user.id).all()
+
+    footprints = (
+        db.query(models.Footprint)
+        .filter(models.Footprint.user_id == current_user.id)
+        .all()
+    )
     results = []
     today = datetime.utcnow().date()
 
     for f in footprints:
+
         results.append(f)
+
         if not f.is_recurring:
             continue
 
-        # Start from the date you chose (e.g., October)
-        # End 6 months in the future so the graph looks ahead
-        start_date = f.entry_date.date() if hasattr(f.entry_date, 'date') else f.entry_date
+        start_date = (
+            f.entry_date.date() if hasattr(f.entry_date, "date") else f.entry_date
+        )
         end_limit = today + timedelta(weeks=26)
 
-        # WEEKLY
-        if f.recurrence_frequency == "weekly":
-            current_date = start_date + timedelta(weeks=1)
-            while current_date <= end_limit:
-                results.append(schemas.FootprintResponse(**f.__dict__, entry_date=current_date))
-                current_date += timedelta(weeks=1)
+        current_date = start_date
 
-        # WEEKDAY (Mon-Fri)
-        elif f.recurrence_frequency == "weekday":
-            current_date = start_date
-            while current_date <= end_limit:
-                # 0-4 are Mon-Fri
-                if current_date.weekday() < 5 and current_date != start_date:
-                    results.append(schemas.FootprintResponse(**f.__dict__, entry_date=current_date))
-                current_date += timedelta(days=1)
+        while current_date < end_limit:
+            current_date += timedelta(days=1)
+
+            should_add = False
+
+            if f.recurrence_frequency == "daily":
+                should_add = True
+            elif f.recurrence_frequency == "weekday" and current_date.weekday() < 5:
+                should_add = True
+            elif (
+                f.recurrence_frequency == "weekly"
+                and (current_date - start_date).days % 7 == 0
+            ):
+                should_add = True
+            elif (
+                f.recurrence_frequency == "monthly"
+                and current_date.day == start_date.day
+            ):
+                should_add = True
+
+            if should_add:
+
+                ghost_entry = schemas.FootprintResponse(
+                    id=int(f"{f.id}{current_date.strftime('%m%d%y')}"),
+                    activity_type=f.activity_type,
+                    carbon_kg=f.carbon_kg,
+                    details=f.details,
+                    entry_date=current_date,
+                    is_recurring=f.is_recurring,
+                    recurrence_frequency=f.recurrence_frequency,
+                    created_at=f.created_at,
+                )
+                results.append(ghost_entry)
 
     return results
