@@ -230,13 +230,3 @@ def suggest_offsets(carbon_kg: float) -> list[str]:
             "Reduce air travel where possible",
             "Contribute to reforestation charities"
         ]
-
-
-def calculate_points(carbon_kg: float) -> int:
-    """Example gamification: 10 points per kg CO2 offset, capped at 100 points."""
-    return int(min(carbon_kg * 10, 100))
-
-
-def get_user_points(user) -> int:
-    """Sum points for all completed footprints of a user."""
-    return sum(calculate_points(f.carbon_kg) for f in getattr(user, "footprints", []) if getattr(f, "completed", False))
