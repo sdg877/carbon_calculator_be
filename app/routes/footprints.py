@@ -32,8 +32,10 @@ def create_footprint(
     user: models.User = Depends(get_current_user),
 ):
     carbon_kg = calculate_carbon(footprint.activity_type, footprint.details)
+    offsets = suggest_offsets(carbon_kg)
 
-    db_footprint = models.Footprint(
+    # 1. Create the initial entry
+    first_footprint = models.Footprint(
         activity_type=footprint.activity_type,
         carbon_kg=carbon_kg,
         user_id=user.id,
@@ -41,22 +43,59 @@ def create_footprint(
         entry_date=footprint.entry_date,
         is_recurring=footprint.is_recurring,
         recurrence_frequency=footprint.recurrence_frequency,
+        suggested_offsets=offsets,
     )
+    db.add(first_footprint)
+
+    # 2. If recurring, generate future entries
+    if footprint.is_recurring:
+        start_date = footprint.entry_date
+        # Create entries for the next 26 weeks (approx 6 months)
+        end_limit = start_date + timedelta(weeks=26)
+        current_date = start_date
+
+        while current_date < end_limit:
+            current_date += timedelta(days=1)
+            should_add = False
+
+            if footprint.recurrence_frequency == "daily":
+                should_add = True
+            elif (
+                footprint.recurrence_frequency == "weekday"
+                and current_date.weekday() < 5
+            ):
+                should_add = True
+            elif (
+                footprint.recurrence_frequency == "weekly"
+                and (current_date - start_date).days % 7 == 0
+            ):
+                should_add = True
+            elif footprint.recurrence_frequency == "monthly":
+                # Matches the same day of the month
+                if current_date.day == start_date.day:
+                    should_add = True
+
+            if should_add:
+                future_footprint = models.Footprint(
+                    activity_type=footprint.activity_type,
+                    carbon_kg=carbon_kg,
+                    user_id=user.id,
+                    details=footprint.details,
+                    entry_date=current_date,
+                    is_recurring=True,
+                    recurrence_frequency=footprint.recurrence_frequency,
+                    suggested_offsets=offsets,
+                )
+                db.add(future_footprint)
 
     try:
-        db.add(db_footprint)
         db.commit()
-        db.refresh(db_footprint)
+        db.refresh(first_footprint)
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Database error: {e}")
 
-    offsets = suggest_offsets(carbon_kg)
-    db_footprint.suggested_offsets = offsets
-    db.commit()
-    db.refresh(db_footprint)
-
-    return db_footprint
+    return first_footprint
 
 
 @router.post("/bulk", response_model=List[schemas.FootprintResponse])
@@ -153,61 +192,8 @@ def get_my_footprints(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(auth.get_current_user),
 ):
-
-    footprints = (
+    return (
         db.query(models.Footprint)
         .filter(models.Footprint.user_id == current_user.id)
         .all()
     )
-    results = []
-    today = datetime.utcnow().date()
-
-    for f in footprints:
-
-        results.append(f)
-
-        if not f.is_recurring:
-            continue
-
-        start_date = (
-            f.entry_date.date() if hasattr(f.entry_date, "date") else f.entry_date
-        )
-        end_limit = today + timedelta(weeks=26)
-
-        current_date = start_date
-
-        while current_date < end_limit:
-            current_date += timedelta(days=1)
-
-            should_add = False
-
-            if f.recurrence_frequency == "daily":
-                should_add = True
-            elif f.recurrence_frequency == "weekday" and current_date.weekday() < 5:
-                should_add = True
-            elif (
-                f.recurrence_frequency == "weekly"
-                and (current_date - start_date).days % 7 == 0
-            ):
-                should_add = True
-            elif (
-                f.recurrence_frequency == "monthly"
-                and current_date.day == start_date.day
-            ):
-                should_add = True
-
-            if should_add:
-
-                ghost_entry = schemas.FootprintResponse(
-                    id=int(f"{f.id}{current_date.strftime('%m%d%y')}"),
-                    activity_type=f.activity_type,
-                    carbon_kg=f.carbon_kg,
-                    details=f.details,
-                    entry_date=current_date,
-                    is_recurring=f.is_recurring,
-                    recurrence_frequency=f.recurrence_frequency,
-                    created_at=f.created_at,
-                )
-                results.append(ghost_entry)
-
-    return results
