@@ -25,78 +25,6 @@ def get_user_footprints(
     return db.query(models.Footprint).filter(models.Footprint.user_id == user.id).all()
 
 
-# @router.post("/", response_model=schemas.FootprintResponse)
-# def create_footprint(
-#     footprint: schemas.FootprintCreate,
-#     db: Session = Depends(get_db),
-#     user: models.User = Depends(get_current_user),
-# ):
-#     carbon_kg = calculate_carbon(footprint.activity_type, footprint.details)
-#     offsets = suggest_offsets(carbon_kg)
-
-#     # 1. Create the initial entry
-#     first_footprint = models.Footprint(
-#         activity_type=footprint.activity_type,
-#         carbon_kg=carbon_kg,
-#         user_id=user.id,
-#         details=footprint.details,
-#         entry_date=footprint.entry_date,
-#         is_recurring=footprint.is_recurring,
-#         recurrence_frequency=footprint.recurrence_frequency,
-#         suggested_offsets=offsets,
-#     )
-#     db.add(first_footprint)
-
-#     # 2. If recurring, generate future entries
-#     if footprint.is_recurring:
-#         start_date = footprint.entry_date
-#         # Create entries for the next 26 weeks (approx 6 months)
-#         end_limit = start_date + timedelta(weeks=26)
-#         current_date = start_date
-
-#         while current_date < end_limit:
-#             current_date += timedelta(days=1)
-#             should_add = False
-
-#             if footprint.recurrence_frequency == "daily":
-#                 should_add = True
-#             elif (
-#                 footprint.recurrence_frequency == "weekday"
-#                 and current_date.weekday() < 5
-#             ):
-#                 should_add = True
-#             elif (
-#                 footprint.recurrence_frequency == "weekly"
-#                 and (current_date - start_date).days % 7 == 0
-#             ):
-#                 should_add = True
-#             elif footprint.recurrence_frequency == "monthly":
-#                 # Matches the same day of the month
-#                 if current_date.day == start_date.day:
-#                     should_add = True
-
-#             if should_add:
-#                 future_footprint = models.Footprint(
-#                     activity_type=footprint.activity_type,
-#                     carbon_kg=carbon_kg,
-#                     user_id=user.id,
-#                     details=footprint.details,
-#                     entry_date=current_date,
-#                     is_recurring=True,
-#                     recurrence_frequency=footprint.recurrence_frequency,
-#                     suggested_offsets=offsets,
-#                 )
-#                 db.add(future_footprint)
-
-#     try:
-#         db.commit()
-#         db.refresh(first_footprint)
-#     except Exception as e:
-#         db.rollback()
-#         raise HTTPException(status_code=500, detail=f"Database error: {e}")
-
-#     return first_footprint
-
 @router.post("/", response_model=schemas.FootprintResponse)
 def create_footprint(
     footprint: schemas.FootprintCreate,
@@ -106,7 +34,6 @@ def create_footprint(
     carbon_kg = calculate_carbon(footprint.activity_type, footprint.details)
     offsets = suggest_offsets(carbon_kg)
 
-    # 1. Create the initial entry
     first_footprint = models.Footprint(
         activity_type=footprint.activity_type,
         carbon_kg=carbon_kg,
@@ -119,18 +46,16 @@ def create_footprint(
     )
     db.add(first_footprint)
 
-    # 2. Generate future entries with safety limits
     if footprint.is_recurring:
         start_date = footprint.entry_date
-        
-        # SET REASONABLE LIMITS:
-        # Default to 6 months, but never exceed 1 year (365 days)
+
         max_allowed_future = start_date + timedelta(days=365)
-        requested_end = footprint.recurrence_end_date or (start_date + timedelta(weeks=26))
-        
-        # Use whichever is sooner to prevent infinite loops
+        requested_end = footprint.recurrence_end_date or (
+            start_date + timedelta(weeks=26)
+        )
+
         end_limit = min(requested_end, max_allowed_future)
-        
+
         current_date = start_date
         entries_count = 0
 
@@ -176,6 +101,7 @@ def create_footprint(
         raise HTTPException(status_code=500, detail=f"Database error: {e}")
 
     return first_footprint
+
 
 @router.post("/bulk", response_model=List[schemas.FootprintResponse])
 def create_multiple_footprints(
