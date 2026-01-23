@@ -2,16 +2,12 @@ from typing import Optional, List, Dict
 from pydantic import BaseModel
 from datetime import datetime
 
-
-# --- USER SCHEMAS ---
 class UserBase(BaseModel):
     username: str
     email: str
 
-
 class UserCreate(UserBase):
     password: str
-
 
 class UserResponse(UserBase):
     id: int
@@ -20,11 +16,9 @@ class UserResponse(UserBase):
     class Config:
         from_attributes = True
 
-
 class UserUpdate(BaseModel):
     username: Optional[str] = None
     email: Optional[str] = None
-
 
 class Token(BaseModel):
     access_token: str
@@ -32,7 +26,6 @@ class Token(BaseModel):
 
 
 # --- FOOTPRINT SCHEMAS ---
-
 
 class FootprintBase(BaseModel):
     activity_type: str
