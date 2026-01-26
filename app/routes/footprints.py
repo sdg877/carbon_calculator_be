@@ -1,8 +1,7 @@
-import os
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from typing import List, Dict
+from typing import List
 from datetime import datetime
 from datetime import timedelta
 from .. import models, schemas, auth
@@ -190,15 +189,3 @@ def get_monthly_progress(footprints: List[models.Footprint]) -> Dict[str, float]
             month = datetime.utcnow().strftime("%Y-%m")
         monthly_totals[month] += f.carbon_kg
     return dict(monthly_totals)
-
-
-@router.get("/self", response_model=List[schemas.FootprintResponse])
-def get_my_footprints(
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(auth.get_current_user),
-):
-    return (
-        db.query(models.Footprint)
-        .filter(models.Footprint.user_id == current_user.id)
-        .all()
-    )
