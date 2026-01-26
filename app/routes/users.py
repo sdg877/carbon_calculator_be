@@ -5,19 +5,7 @@ from typing import List
 from app import models, schemas, auth
 from datetime import datetime
 
-from .. import auth, models, schemas
-from ..database import SessionLocal
-
 router = APIRouter(prefix="", tags=["Users"])
-
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
 
 @router.post("/register", response_model=schemas.UserResponse)
 def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
@@ -51,12 +39,6 @@ def login(
 
     access_token = auth.create_access_token({"sub": str(user.id)})
     return {"access_token": access_token, "token_type": "bearer"}
-
-
-@router.get("/", response_model=List[schemas.UserResponse])
-def get_all_users(db: Session = Depends(get_db)):
-    users = db.query(models.User).all()
-    return users
 
 
 @router.get("/profile", response_model=schemas.UserResponse)
