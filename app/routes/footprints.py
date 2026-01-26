@@ -177,15 +177,15 @@ def get_all_footprints(
     return formatted_results
 
 
-def get_monthly_progress(footprints: List[models.Footprint]) -> Dict[str, float]:
-    """Returns monthly CO₂ totals for a user."""
-    from collections import defaultdict
+# def get_monthly_progress(footprints: List[models.Footprint]) -> Dict[str, float]:
+#     """Returns monthly CO₂ totals for a user."""
+#     from collections import defaultdict
 
-    monthly_totals = defaultdict(float)
-    for f in footprints:
-        if hasattr(f, "created_at") and f.created_at:
-            month = f.created_at.strftime("%Y-%m")
-        else:
-            month = datetime.utcnow().strftime("%Y-%m")
-        monthly_totals[month] += f.carbon_kg
-    return dict(monthly_totals)
+#     monthly_totals = defaultdict(float)
+#     for f in footprints:
+#         if hasattr(f, "created_at") and f.created_at:
+#             month = f.created_at.strftime("%Y-%m")
+#         else:
+#             month = datetime.utcnow().strftime("%Y-%m")
+#         monthly_totals[month] += f.carbon_kg
+#     return dict(monthly_totals)
