@@ -1,13 +1,18 @@
 from typing import Optional, List, Dict
-from pydantic import BaseModel
+from pydantic import BaseModel, Field  # Added Field
 from datetime import datetime
 
+
 class UserBase(BaseModel):
-    username: str
-    email: str
+    username: str = Field(..., description="Unique username for the account")
+    email: str = Field(..., description="User's primary contact email")
+
 
 class UserCreate(UserBase):
-    password: str
+    password: str = Field(
+        ..., description="Plain text password (hashed before storage)"
+    )
+
 
 class UserResponse(UserBase):
     id: int
@@ -16,9 +21,11 @@ class UserResponse(UserBase):
     class Config:
         from_attributes = True
 
+
 class UserUpdate(BaseModel):
     username: Optional[str] = None
     email: Optional[str] = None
+
 
 class Token(BaseModel):
     access_token: str
@@ -27,12 +34,21 @@ class Token(BaseModel):
 
 # --- FOOTPRINT SCHEMAS ---
 
+
 class FootprintBase(BaseModel):
-    activity_type: str
-    details: dict
-    entry_date: datetime
-    is_recurring: bool = False
-    recurrence_frequency: Optional[str] = None
+    activity_type: str = Field(
+        ..., description="Type of activity, e.g., 'flight', 'commute'"
+    )
+    details: dict = Field(
+        ..., description="JSON metadata containing distance, fuel type, etc."
+    )
+    entry_date: datetime = Field(..., description="The date the activity occurred")
+    is_recurring: bool = Field(
+        False, description="Whether this activity repeats automatically"
+    )
+    recurrence_frequency: Optional[str] = Field(
+        None, description="Frequency: daily, weekly, monthly"
+    )
 
 
 class FootprintCreate(FootprintBase):
@@ -41,9 +57,13 @@ class FootprintCreate(FootprintBase):
 
 class FootprintResponse(FootprintBase):
     id: int
-    carbon_kg: float
+    carbon_kg: float = Field(
+        ..., description="Calculated carbon emissions in kilograms"
+    )
     created_at: datetime
-    suggested_offsets: Optional[List[str]] = None
+    suggested_offsets: Optional[List[str]] = Field(
+        None, description="Recommended carbon offset projects"
+    )
 
     class Config:
         from_attributes = True
