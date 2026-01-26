@@ -1,9 +1,11 @@
+from datetime import datetime
+from typing import List
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
-from typing import List
-from app import models, schemas, auth
-from datetime import datetime
+
+from .. import models, schemas, auth
+from ..database import get_db
 
 router = APIRouter(prefix="", tags=["Users"])
 
