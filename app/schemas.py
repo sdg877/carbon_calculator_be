@@ -1,5 +1,5 @@
 from typing import Optional, List, Dict
-from pydantic import BaseModel, Field  # Added Field
+from pydantic import BaseModel, Field
 from datetime import datetime
 
 
@@ -30,9 +30,6 @@ class UserUpdate(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str
-
-
-# --- FOOTPRINT SCHEMAS ---
 
 
 class FootprintBase(BaseModel):
