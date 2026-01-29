@@ -46,6 +46,9 @@ class FootprintBase(BaseModel):
     recurrence_frequency: Optional[str] = Field(
         None, description="Frequency: daily, weekly, monthly"
     )
+    recurrence_end_date: Optional[datetime] = Field(
+        None, description="When the recurrence stops"
+    )
 
 
 class FootprintCreate(FootprintBase):
