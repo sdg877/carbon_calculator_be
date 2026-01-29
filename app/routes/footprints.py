@@ -17,7 +17,7 @@ def get_current_user(
     return auth.get_current_user(token, db)
 
 
-@router.get("/", response_model=List[schemas.FootprintResponse])
+@router.get("/self", response_model=List[schemas.FootprintResponse])
 def get_user_footprints(
     db: Session = Depends(get_db), user: models.User = Depends(get_current_user)
 ):
