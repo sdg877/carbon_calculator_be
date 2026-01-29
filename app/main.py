@@ -2,15 +2,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from . import models
 from .database import engine
-from .routes import users, footprints, suggestions
+from .routes import users, footprints
 
 app = FastAPI()
-
-models.Base.metadata.create_all(bind=engine)
-
-app.include_router(users.router, tags=["users"])
-app.include_router(footprints.router, tags=["footprints"])
-app.include_router(suggestions.router, prefix="/offsets", tags=["offsets"])
 
 app.add_middleware(
     CORSMiddleware,
@@ -19,6 +13,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+models.Base.metadata.create_all(bind=engine)
+
+app.include_router(users.router, tags=["users"])
+app.include_router(footprints.router, tags=["footprints"])
 
 
 @app.get("/")
