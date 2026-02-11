@@ -1,29 +1,3 @@
-# from fastapi import FastAPI
-# from fastapi.middleware.cors import CORSMiddleware
-# from . import models
-# from .database import engine
-# from .routes import users, footprints
-
-# app = FastAPI()
-
-# app.add_middleware(
-#     CORSMiddleware,
-#     allow_origins=["http://localhost:3000"],
-#     allow_credentials=True,
-#     allow_methods=["*"],
-#     allow_headers=["*"],
-# )
-
-# models.Base.metadata.create_all(bind=engine)
-
-# app.include_router(users.router, tags=["users"])
-# app.include_router(footprints.router, tags=["footprints"])
-
-
-# @app.get("/")
-# def root():
-#     return {"message": "Backend running"}
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import requests
@@ -34,10 +8,10 @@ from .routes import users, footprints
 
 app = FastAPI()
 
-# Updated CORS to allow your Vercel site to talk to Render
+# Fix CORS: This allows your Vercel site to talk to Render
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # Allows all origins for now to stop errors
+    allow_origins=["*"], 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -52,7 +26,7 @@ app.include_router(footprints.router, tags=["footprints"])
 def root():
     return {"message": "Backend running"}
 
-# NEW NEWS ROUTE
+# This fixes the 404 error
 @app.get("/api/news")
 def get_news():
     api_key = os.getenv("NEWS_API_KEY")
