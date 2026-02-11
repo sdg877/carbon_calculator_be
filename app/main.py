@@ -8,7 +8,6 @@ from .routes import users, footprints
 
 app = FastAPI()
 
-# Fix CORS: This allows your Vercel site to talk to Render
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"], 
@@ -26,7 +25,6 @@ app.include_router(footprints.router, tags=["footprints"])
 def root():
     return {"message": "Backend running"}
 
-# This fixes the 404 error
 @app.get("/api/news")
 def get_news():
     api_key = os.getenv("NEWS_API_KEY")
