@@ -5,7 +5,7 @@ A robust FastAPI-driven REST API that handles multi-variable carbon footprint ca
 
 ## Deployment Links
 * **Backend GitHub:** [https://github.com/sdg877/carbon_calculator_be](https://github.com/sdg877/carbon_calculator_be)
-* **API Deployment:** [Link to Render/Supabase here]
+
 
 ## Timeframe
 Developed over six months. Transitioned from a local prototype into a scalable production logic layer for environmental analytics.
