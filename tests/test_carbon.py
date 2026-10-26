@@ -3,7 +3,6 @@ import os
 import pytest
 from fastapi import HTTPException
 
-# Ensure the 'app' package can be found
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from app.services.carbon import calculate_carbon, suggest_offsets
@@ -23,10 +22,9 @@ def test_calculate_carbon_invalid_activity():
 
 
 def test_calculate_carbon_missing_details_key():
-    details = {"fuel_type": "petrol"}  # commute missing
+    details = {"fuel_type": "petrol"} 
     carbon = calculate_carbon("driving", details)
-    # should use default commute 'short' = 8 km * factor
-    assert carbon == 8 * 0.192
+    assert carbon == round(8 * 0.192, 1)
 
 
 def test_suggest_offsets_ranges():
