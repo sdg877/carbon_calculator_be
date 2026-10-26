@@ -1,11 +1,10 @@
 # Carbon Calculator Backend
 
 ## Brief
-A robust FastAPI-driven REST API that handles multi-variable carbon footprint calculations, proprietary user authentication, and curated environmental data aggregation.
+A FastAPI-driven REST API that handles multi-variable carbon footprint calculations, custom user authentication, and curated environmental data aggregation.
 
 ## Deployment Links
 * **Backend GitHub:** [https://github.com/sdg877/carbon_calculator_be](https://github.com/sdg877/carbon_calculator_be)
-
 
 ## Timeframe
 Developed over six months. Transitioned from a local prototype into a scalable production logic layer for environmental analytics.
@@ -28,12 +27,12 @@ Developed over six months. Transitioned from a local prototype into a scalable p
 * **Architecture Pivot:** Re-engineering the data flow to support a proxy news engine after identifying a lack of production-ready volunteering APIs.
 
 ## Wins
-* **Performance:** Leveraged FastAPI’s asynchronous capabilities to ensure low-latency responses for complex calculation queries.
-* **Security:** Successfully implemented a custom, production-ready authentication flow without relying on third-party providers.
+* **Consistency:** Used FastAPI's request and response validation to keep endpoints consistent and easy to test.
+* **Security:** Implemented custom JWT authentication with bcrypt password hashing, without relying on third-party providers.
 
 ## Key Learnings
 * **API Design:** Deepened expertise in RESTful principles, specifically regarding secure endpoint protection and status codes.
-* **Cloud Infrastructure:** Mastered the deployment and management of serverless databases and automated backend hosting.
+* **Cloud Infrastructure:** Gained hands-on experience deploying a backend on Render with a hosted PostgreSQL database on Supabase.
 
 ## Bugs
 * **Rate Limiting:** Managing NewsAPI constraints during concurrent user testing.
@@ -41,4 +40,4 @@ Developed over six months. Transitioned from a local prototype into a scalable p
 
 ## Future Improvements
 * **Microservices:** Decoupling the calculation engine into a standalone service for higher scalability.
-* **Testing Suite:** Implementing comprehensive Pytest coverage for all calculation logic and API endpoints.
+* **Testing Suite:** Extending Pytest coverage from the calculation logic to the API endpoints.
