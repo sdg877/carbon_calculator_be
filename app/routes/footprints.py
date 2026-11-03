@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from typing import List
+from typing import List, Optional
 from datetime import datetime
 from datetime import timedelta
 from .. import models, schemas, auth
@@ -15,13 +15,6 @@ def get_current_user(
     token: str = Depends(auth.oauth2_scheme), db: Session = Depends(get_db)
 ):
     return auth.get_current_user(token, db)
-
-
-@router.get("/self", response_model=List[schemas.FootprintResponse])
-def get_user_footprints(
-    db: Session = Depends(get_db), user: models.User = Depends(get_current_user)
-):
-    return db.query(models.Footprint).filter(models.Footprint.user_id == user.id).all()
 
 
 @router.post("/", response_model=schemas.FootprintResponse)
@@ -130,6 +123,29 @@ def create_multiple_footprints(
         raise HTTPException(status_code=500, detail=f"Database error: {e}")
 
     return db_objects
+
+
+@router.get("/self", response_model=List[schemas.FootprintResponse])
+def get_user_footprints(
+    db: Session = Depends(get_db), user: models.User = Depends(get_current_user)
+):
+    return db.query(models.Footprint).filter(models.Footprint.user_id == user.id).all()
+
+
+@router.get("/", response_model=List[schemas.FootprintResponse])
+def list_footprints(
+    limit: Optional[int] = None,
+    sort: str = "desc",
+    db: Session = Depends(get_db),
+    user: models.User = Depends(get_current_user),
+):
+    query = db.query(models.Footprint).filter(models.Footprint.user_id == user.id)
+    query = query.order_by(
+        models.Footprint.id.desc() if sort == "desc" else models.Footprint.id.asc()
+    )
+    if limit:
+        query = query.limit(limit)
+    return query.all()
 
 
 @router.delete("/bulk", response_model=dict)
