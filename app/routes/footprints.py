@@ -170,9 +170,12 @@ def get_all_footprints(
     )
 
     formatted_results = [
-        {"created_at": row.created_at, "carbon_kg": row.carbon_kg}
+        {
+            "entry_date": row.created_at,
+            "created_at": row.created_at,
+            "carbon_kg": row.carbon_kg,
+        }
         for row in daily_average_footprints
     ]
 
     return formatted_results
-
